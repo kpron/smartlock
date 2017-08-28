@@ -1,5 +1,7 @@
 package main
 
+import "flag"
+import "fmt"
 import "net/http"
 import "os/exec"
 import "log"
@@ -21,11 +23,21 @@ func unlock() {
 	}
 }
 
-func toggle(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
+func toggle(w http.ResponseWriter, r *http.Request, t string) {
+	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	parserr := r.ParseForm()
+	if parserr != nil {
+		log.Println("Cannot parse form", parserr)
+	}
+	key := r.PostFormValue("key")
+	if key != t {
+		log.Println("Wrong token from", r.RemoteAddr)
+		return
+	}
+	log.Println("Correct token from", r.RemoteAddr)
 	err := exec.Command("pgrep", "i3lock").Run()
 	if err != nil {
 		log.Println("not locked, locking now")
@@ -38,8 +50,12 @@ func toggle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func main() {
+	token := flag.String("token", "test", "secret token")
+	port := flag.String("port", "10666", "port for listen on")
+	flag.Parse()
+	listen := fmt.Sprintf(":%v", *port)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		toggle(w, r)
+		toggle(w, r, *token)
 	})
-	http.ListenAndServe(":10666", nil)
+	http.ListenAndServe(listen, nil)
 }
