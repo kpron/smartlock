@@ -6,21 +6,23 @@ import "net/http"
 import "os/exec"
 import "log"
 
-func lock() {
-	cmd := exec.Command("/bin/bash", "-c", "'/home/kpron/.config/i3/lock2'")
-	out, err := cmd.Output()
-	if err != nil {
-		log.Println(err, "from code")
-		log.Printf("%s", out)
+func checkError(e error) {
+	if e != nil {
+		log.Println(e)
 	}
 }
+func lock() error {
+	cmd := exec.Command("/bin/bash", "-c", "'/home/kpron/.config/i3/lock2'")
+	err := cmd.Run()
+	checkError(err)
+	return nil
+}
 
-func unlock() {
+func unlock() error {
 	cmd := exec.Command("killall", "i3lock")
 	err := cmd.Run()
-	if err != nil {
-		log.Println(err, "from code")
-	}
+	checkError(err)
+	return nil
 }
 
 func toggle(w http.ResponseWriter, r *http.Request, t string) {
@@ -29,12 +31,11 @@ func toggle(w http.ResponseWriter, r *http.Request, t string) {
 		return
 	}
 	parserr := r.ParseForm()
-	if parserr != nil {
-		log.Println("Cannot parse form", parserr)
-	}
+	checkError(parserr)
 	key := r.PostFormValue("key")
 	if key != t {
 		log.Println("Wrong token from", r.RemoteAddr)
+		w.Write([]byte("wrong"))
 		return
 	}
 	log.Println("Correct token from", r.RemoteAddr)
