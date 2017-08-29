@@ -72,16 +72,21 @@ func TestToggle(t *testing.T) {
 
 func TestStatus(t *testing.T) {
 	testCases := []struct {
-		method string
-		token  string
-		status int
-		answer string
+		method     string
+		token      string
+		status     int
+		answer     string
+		locktoggle bool
 	}{
-		{"POST", "HACK!", http.StatusMethodNotAllowed, ""},
-		{"GET", "", http.StatusOK, "unlocked"},
-		{"POST", "test", http.StatusMethodNotAllowed, ""},
+		{"POST", "HACK!", http.StatusMethodNotAllowed, "", false},
+		{"GET", "", http.StatusOK, "locked", true},
+		{"GET", "", http.StatusOK, "unlocked", false},
+		{"POST", "test", http.StatusMethodNotAllowed, "", false},
 	}
 	for _, tc := range testCases {
+		if tc.locktoggle == true {
+			lock()
+		}
 		data := url.Values{}
 		data.Set("key", tc.token)
 		buffer := new(bytes.Buffer)
@@ -93,6 +98,7 @@ func TestStatus(t *testing.T) {
 		}
 
 		rr := httptest.NewRecorder()
+
 		handler := func(w http.ResponseWriter, r *http.Request) {
 			status(w, r)
 		}
@@ -108,6 +114,9 @@ func TestStatus(t *testing.T) {
 		if rr.Body.String() != expected {
 			t.Errorf("handler returned unexpected body: got %v want %v",
 				rr.Body.String(), expected)
+		}
+		if tc.locktoggle == true {
+			unlock()
 		}
 	}
 }
