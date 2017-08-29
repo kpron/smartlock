@@ -6,6 +6,7 @@ import "net/http/httptest"
 import "net/url"
 import "bytes"
 import "testing"
+import "time"
 
 func TestCheckError(t *testing.T) {
 	checkError(errors.New("Test error"))
@@ -35,6 +36,7 @@ func TestToggle(t *testing.T) {
 		{"POST", "HACK!", http.StatusOK, "wrong"},
 		{"GET", "shit in get", http.StatusMethodNotAllowed, ""},
 		{"POST", "test", http.StatusOK, "lolked"},
+		{"POST", "test", http.StatusOK, "unlolked"},
 	}
 	for _, tc := range testCases {
 		data := url.Values{}
@@ -64,5 +66,6 @@ func TestToggle(t *testing.T) {
 			t.Errorf("handler returned unexpected body: got %v want %v",
 				rr.Body.String(), expected)
 		}
+		time.Sleep(time.Second)
 	}
 }
